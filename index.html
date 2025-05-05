@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PDF Editor Tool</title>
+  <style>
+    canvas {
+      border: 1px solid black;
+      cursor: text;
+    }
+  </style>
+</head>
+<body>
+  <h2>Simple PDF Text Editor</h2>
+  <input type="file" id="pdfUpload" accept="application/pdf"><br><br>
+  <canvas id="pdfCanvas"></canvas><br>
+  <input type="text" id="textInput" placeholder="Enter text to add">
+  <button onclick="saveImage()">Download Edited Image</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <script>
+    const fileInput = document.getElementById('pdfUpload');
+    const canvas = document.getElementById('pdfCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let textInput = document.getElementById('textInput');
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file.type !== 'application/pdf') return alert("Upload a valid PDF file.");
+
+      const fileReader = new FileReader();
+
+      fileReader.onload = function() {
+        const typedarray = new Uint8Array(this.result);
+
+        pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+          pdf.getPage(1).then(page => {
+            const viewport = page.getViewport({ scale: 1.5 });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            page.render({ canvasContext: ctx, viewport: viewport });
+          });
+        });
+      };
+
+      fileReader.readAsArrayBuffer(file);
+    });
+
+    canvas.addEventListener('click', function(e) {
+      const x = e.offsetX;
+      const y = e.offsetY;
+      const text = textInput.value;
+      if (text) {
+        ctx.font = "16px Arial";
+        ctx.fillStyle = "black";
+        ctx.fillText(text, x, y);
+      }
+    });
+
+    function saveImage() {
+      const link = document.createElement('a');
+      link.download = 'edited.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+  </script>
+</body>
+</html>
